@@ -23,6 +23,7 @@ function GeoJSONVT(data, options) {
 
     this.tiles = {};
     this.tileCoords = [];
+    this.emptyTiles = [];
 
     if (debug) {
         console.timeEnd('preprocess data');
@@ -111,9 +112,16 @@ GeoJSONVT.prototype.splitTile = function (features, z, x, y, cz, cx, cy) {
         }
 
         // if we slice further down, no need to keep source geometry
-        tile.source = null;
+        if (z !== options.indexMaxZoom) {
+            tile.source = null;
+        }
 
-        if (features.length === 0) continue;
+        if (features.length === 0) {
+            if (!this.emptyTiles.includes(id)) {
+                this.emptyTiles.push(id);
+            }
+            continue;
+        }
 
         if (debug > 1) console.time('clipping');
 
@@ -163,6 +171,9 @@ GeoJSONVT.prototype.getTile = function (z, x, y) {
     x = ((x % z2) + z2) % z2; // wrap tile x coordinate
 
     const id = toID(z, x, y);
+
+    if (this.emptyTiles.includes(id)) return null;
+
     if (this.tiles[id]) return transform(this.tiles[id], extent);
 
     if (debug > 1) console.log('drilling down to z%d-%d-%d', z, x, y);
@@ -179,7 +190,10 @@ GeoJSONVT.prototype.getTile = function (z, x, y) {
         parent = this.tiles[toID(z0, x0, y0)];
     }
 
-    if (!parent || !parent.source) return null;
+    if (!parent || !parent.source) {
+        this.emptyTiles.push(id);
+        return null;
+    }
 
     // if we found a parent tile containing the original geometry, we can drill down from it
     if (debug > 1) console.log('found parent tile z%d-%d-%d', z0, x0, y0);
@@ -188,8 +202,28 @@ GeoJSONVT.prototype.getTile = function (z, x, y) {
     this.splitTile(parent.source, z0, x0, y0, z, x, y);
     if (debug > 1) console.timeEnd('drilling down');
 
+    // Clear the tiles of others zoom levels
+    let deleted = 0;
+    for (const key in this.tiles) {
+        if (this.tiles[key].z > options.indexMaxZoom && (this.tiles[key].z < z || this.tiles[key].z > z)) {
+            delete this.tiles[key];
+            deleted++;
+        }
+    }
+    if (debug > 0) {
+        console.log('%d tiles deleted', deleted);
+    }
+
+    if (!this.tiles[id]) {
+        if (!this.emptyTiles.includes(id)) {
+            this.emptyTiles.push(id);
+        }
+    }
+
     return this.tiles[id] ? transform(this.tiles[id], extent) : null;
 };
+
+
 
 function toID(z, x, y) {
     return (((1 << z) * y + x) * 32) + z;
