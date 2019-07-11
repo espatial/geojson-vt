@@ -77,7 +77,8 @@ function addFeature(tile, feature, tolerance, options) {
             geometry: simplified,
             type: type === 'Polygon' || type === 'MultiPolygon' ? 3 :
             type === 'LineString' || type === 'MultiLineString' ? 2 : 1,
-            tags
+            tags,
+            src: feature.src
         };
         if (feature.id !== null) {
             tileFeature.id = feature.id;

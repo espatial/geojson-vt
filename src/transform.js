@@ -12,6 +12,11 @@ export default function transformTile(tile, extent) {
         const geom = feature.geometry;
         const type = feature.type;
 
+        // We don't need the full GeoJson for polygon when z <= 10
+        if (tile.z <= 10 && feature.type === 3) {
+            feature.src = [];
+        }
+
         feature.geometry = [];
 
         if (type === 1) {

@@ -1,5 +1,5 @@
 
-export default function createFeature(id, type, geom, tags) {
+export default function createFeature(id, type, geom, tags, src) {
     const feature = {
         id: typeof id === 'undefined' ? null : id,
         type,
@@ -8,7 +8,8 @@ export default function createFeature(id, type, geom, tags) {
         minX: Infinity,
         minY: Infinity,
         maxX: -Infinity,
-        maxY: -Infinity
+        maxY: -Infinity,
+        src
     };
     calcBBox(feature);
     return feature;

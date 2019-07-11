@@ -27,6 +27,7 @@ function convertFeature(features, geojson, options, index) {
 
     const coords = geojson.geometry.coordinates;
     const type = geojson.geometry.type;
+    const src = geojson.geometry;
     const tolerance = Math.pow(options.tolerance / ((1 << options.maxZoom) * options.extent), 2);
     let geometry = [];
     let id = geojson.id;
@@ -52,7 +53,7 @@ function convertFeature(features, geojson, options, index) {
             for (const line of coords) {
                 geometry = [];
                 convertLine(line, geometry, tolerance, false);
-                features.push(createFeature(id, 'LineString', geometry, geojson.properties));
+                features.push(createFeature(id, 'LineString', geometry, geojson.properties, src));
             }
             return;
         } else {
@@ -81,7 +82,7 @@ function convertFeature(features, geojson, options, index) {
         throw new Error('Input data is not a valid GeoJSON object.');
     }
 
-    features.push(createFeature(id, type, geometry, geojson.properties));
+    features.push(createFeature(id, type, geometry, geojson.properties, src));
 }
 
 function convertPoint(coords, out) {
